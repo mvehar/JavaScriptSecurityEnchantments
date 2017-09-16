@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+
+    <script>
+        
+        
+        (function(){
+            'use strict'
+
+            var __ = function () {
+
+            var console = window.console;
+            var alert = window.alert;
+
+
+            var test = function(){
+
+            }
+   
+            test.bind(1)
+
+            console.log(test)
+            
+            
+            var k = {
+                key : Symbol('__key')
+            } 
+            var a = {
+                [k.key] : () => {
+                    console.log('chk')
+                }
+            };
+
+            
+            (()=>{
+                
+                var c = 1;
+                console.log(this);
+                this.a = 1
+
+                var chkFn = a[k.key];
+                var f = function(cb) {
+                    chkFn()
+                    var _ = function () {console.log(this, 2)}
+                    
+                    _.call({})
+                };
+
+
+
+                var ref = 1
+                var fn = function(){console.log(this)}
+
+                setTimeout(fn.bind({...this, ref}), 1000)
+                document.addEventListener('click', f)
+            }).call(this)
+
+                
+            
+            delete a[k.key]
+            delete k.key
+        }
+
+        __.call({})
+    }());
+        
+        
+        window.console = {log:()=>alert('NOK')}
+        window.alert = 2
+
+        
+    </script>
+</head>
+<body>
+	<div id="hello" name='hello2'></div>
+    
+</body>
+</html>

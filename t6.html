@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script type="text/javascript">
+// select the target node
+var target = document
+
+delete HTMLElement.prototype.onclick
+ 
+// create an observer instance
+var observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        console.log(mutation);
+
+        if(mutation.addedNodes.length > 0){
+         if(mutation.addedNodes[0].hasAttribute && mutation.addedNodes[0].hasAttribute('onerror')){
+            //mutation.addedNodes[0].removeAttribute('onerror')
+            }
+
+            //console.log(mutation.addedNodes[0])
+        }
+    });
+});
+ 
+// configuration of the observer:
+var config = { attributes: true, childList: true, characterData: true, subtree:true }
+ 
+// pass in the target node, as well as the observer options
+observer.observe(target, config);
+
+    function test (e) {
+        "use strict"
+         console.log(e.callee)
+         alert('1')
+     } 
+
+    </script>
+
+</head>
+<body onload='console.log("testddd")'>
+	<div id="hello" name='hello2'>
+        <button id="test" onclick='alert("1")'>click</button>
+    </div>
+    <img src="xx" onerror='test(arguments)' />
+    
+<div id="cla" style="\63&#9\06f&#10\0006c&#12\00006F&#13\R:\000072 Ed;color\0\bla:yellow\0\bla;col\0\00 \&#xA0or:blue;">XXX</div>
+
+<IMG SRC="\63&#9j&#X41vascript:alert('test2')">
+
+    <script class="test">
+        
+      console.log(document.currentScript)
+      var c = document.currentScript
+
+      var fun;
+      (function(){
+        console.log('inside module', document.currentScript)
+        
+        fun = function(e){
+
+        console.log('inside fun', document.currentScript, e)
+        }
+      
+
+      })()
+
+        var cd = document.currentScript;
+
+      window.onload=()=>{ fun(cd)}
+
+      var el =document.getElementById('hello')
+ 
+      Object.defineProperty(el, 'test', {writable:false, configurable:false, value: 1})
+
+      var el2 =document.getElementById('hello')
+
+
+
+
+        
+    </script>
+</body>
+</html>
