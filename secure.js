@@ -18,25 +18,25 @@ var isURLWhitelisted = function(url){
     return false
 }
 
-var checkAttibuteUrl = function (attribute) {
-    if(!isURLWhitelisted(attribute.value)){
-        const oldUlr = attribute.value
+var checkAttibuteUrl = function (target, attribute, value) {
+    if(!isURLWhitelisted(value)){
         // Popravi attribut
-        console.log("URL not allowed in attributes", oldUlr)
-        attribute.value = blockedUrlHash
+        console.warn("URL not allowed in attributes", value)
+        target.setAttribute(attribute, blockedUrlHash)
     }
 }
 
-var observer = new MutationObserver(function (mutations) {
+var DOMObserver = new MutationObserver(function (mutations) {
+    "use strict"
     mutations.forEach(function (mutation) {
 
         if(mutation.type === 'attributes'){
             // Sprememba atributa na obstojecem elementu
             var changedAttribute = mutation.attributeName
-            var attr = mutation.target.getAttributeNode(changedAttribute)
+            var attrValue = mutation.target.getAttribute(changedAttribute)
 
-            if(attr !== null && urlSensitiveAttributes.includes(attr.name)){
-                checkAttibuteUrl(attr)
+            if(attrValue !== undefined && urlSensitiveAttributes.includes(changedAttribute)){
+                checkAttibuteUrl(mutation.target, changedAttribute, attrValue)
             }
         }
 
@@ -48,7 +48,7 @@ var observer = new MutationObserver(function (mutations) {
                                 .map((a) => attrs.getNamedItem(a))
                                 .filter(a=> a!==null)
 
-                attrs.forEach(a => checkAttibuteUrl(a))   
+                attrs.forEach(a => checkAttibuteUrl(node, a.name, a.value))   
             }
 
       
@@ -65,15 +65,17 @@ var observer = new MutationObserver(function (mutations) {
     });
 });
 
+
+function hideElement(element){
+    console.log('Hidding')
+    Object.defineProperty(element, 'HIDEME', {
+        value : true,
+        configurable : false
+    })
+}
+
 // konfiguracija sledenja:
-var config = { attributes: true, childList: true, characterData: true, subtree: true }
-
-// izbrani HTML element
-var target = document
-
-// pricetek sledenja
-observer.observe(target, config);
-
+var config = { attributes: true, childList: true, characterData: true, subtree: true };
 
 
 (function () {
@@ -172,7 +174,7 @@ var secureFunction = (function(Object){
         var atributi = ObjectgetOwnPropertyDescriptor(objekt, metoda)
 
         if(atributi === undefined || atributi.configurable !== true){
-            console.log('Lastnost ni konfigurabilna: '+metoda)
+            console.warn('Lastnost ni konfigurabilna: '+metoda)
             return
         }
 
@@ -315,26 +317,6 @@ var noAccessPolicy = function(tip, metoda){
 }
 
 
-// Primer restriktivne politike
-secureFunction(window, 'alert', function(tip, metoda, cb){ 
-    return cb()
-})
-secureFunction(window, 'confirm', readOnlyPolicy)
-
-secureFunction(XMLHttpRequest.prototype, 'open', urlWhitelistXMLHttpPolicy)
-
-secureFunction(window, 'open', urlWhitelistPolicy)
-
-secureFunction(window, 'WebSocket', urlWhitelistConstructorPolicy)
-secureFunction(window, 'EventSource', urlWhitelistConstructorPolicy)
-secureFunction(window, 'RTCPeerConnection', urlWhitelistConstructorPolicy)
-
-secureFunction(Document.prototype, 'cookie', writeOnlyPolicy)
-secureFunction(HTMLDocument.prototype, 'cookie', writeOnlyPolicy)
-
-
-
-
 ///////////////////////////////////////////////
 
 
@@ -452,6 +434,7 @@ var protectDOM = function() {
     secureFunction(Element.prototype, 'querySelector', htmlSingleOutHideFnProlicy)
     secureFunction(Element.prototype, 'webkitMatchesSelector', htmlSingleOutHideFnProlicy)
     secureFunction(Document.prototype, 'elementFromPoint', htmlSingleOutHideFnProlicy)
+    secureFunction(Document.prototype, 'getElementById', htmlSingleOutHideFnProlicy)
     secureFunction(Document.prototype, 'scrollingElement', htmlSingleOutHideFnProlicy)
 
 
@@ -461,48 +444,86 @@ var protectDOM = function() {
     secureFunction(Event.prototype, 'srcElement', htmlSingleOutHideProlicy)
 }
 
-
-var a = (function(){
+var protectElement = (function(){
     'use strict'
     var NOCHANGES_CLASS = '____INTEGRITY_____'
 
+    var protectedElements = []
+
 
     var integrityFunction = function (mutations) {
-    console.log(mutations)
+        mutations.forEach(function (mutation) {
 
-    mutations.forEach(function (mutation) {
+            let target = mutation.target
 
-        if(mutation.type === 'attributes'){
-            // Sprememba atributa na obstojecem elementu
-            var changedAttribute = mutation.attributeName
-            var attr = mutation.target.getAttributeNode(changedAttribute)
+            // check if mutation re
+            var element = protectedElements.find(pe => pe.element === target)
 
-            attr.value = mutation.oldValue
-            return
-        }
+            if(mutation.type === 'attributes'){
+                // Sprememba atributa na obstojecem elementu
+                var changedAttribute = mutation.attributeName
+                var newValue = target.getAttribute(changedAttribute)
 
-        if(mutation.type === 'characterData'){
-            // Sprememba atributa na obstojecem elementu
-            mutation.target.data = mutation.oldValue
-        }
-    })
-}
+                // Compare values
+                if(element.attrs[changedAttribute] === undefined){
+                    //Prva sprememba - shrani vrednost
+                    element.attrs[changedAttribute] = mutation.oldValue
+                }
 
+                if(element.attrs[changedAttribute] !== newValue){
+                    target.setAttribute(changedAttribute, mutation.oldValue)
+                    return
+                    
+                }
+            }
 
-    var elementIntegritye = function(element, options){
-        console.log(element, options)
+            if(mutation.type === 'characterData'){
+           
+                var newValue = target.data
+                // Compare values
+                if(element.data === undefined){
+                    //Prva sprememba - shrani vrednost
+                    element.data = mutation.oldValue
+                }
 
-        var observer = new MutationObserver(integrityFunction);
-        observer.observe(element, options)
+                if(element.data !== newValue){
+                    target.data = mutation.oldValue
+                    return
+                }
+            }
+        })
     }
-    var elements = document.getElementsByClassName(NOCHANGES_CLASS)
+
+
     var options = { 
         attributes: true, characterData: true, 
         attributeOldValue: true, characterDataOldValue : true 
     }
 
+    var elementIntegrity = function(element, options){
+        
+        var observer = new MutationObserver(integrityFunction);    
+        protectedElements.push({
+            element:element,
+            attrs : {},
+            data : undefined
+        })
+
+        observer.observe(element, options)
+
+
+        return function unprotect() {
+            observer.disconnect()
+        }
+    }
+
+    var elements = document.getElementsByClassName(NOCHANGES_CLASS)
     if(elements){
-        Array.from(elements).forEach(el => elementIntegritye(el, options))
+        Array.from(elements).forEach(el => elementIntegrity(el, options))
+    }
+
+    return  function(element) {
+        return elementIntegrity(element, options)
     }
 
 }())

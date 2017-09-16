@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script type="text/javascript" src='secure.js'></script>
+
+</head>
+<body>
+    <script defer class="test">
+      function test1(id) {
+        console.log("Test 1 ", id)
+  
+        let time = 0;
+
+        // Test vstavljanja div značk
+        let container = document.createElement('div')
+        let img = document.createElement('img')
+
+        img.setAttribute('src', 'noaccess.png')
+        document.body.append(container)
+
+        time = Date.now()
+        for (var i = 10000; i > 0; i--) {
+          container.append(img.cloneNode())
+        };
+        times.original.push(Date.now() - time)
+
+        container.remove()
+        document.body.append(container)
+
+        // pricetek sledenja
+        DOMObserver.observe(document, config);
+
+        time = Date.now()
+        for (var i = 10000; i > 0; i--) {
+          container.append(img.cloneNode())
+        };
+        times.modified.push(Date.now() - time)
+
+
+        //Clean
+        container.remove()
+        DOMObserver.disconnect()
+
+      }
+
+    function test2(id) {
+        console.log("Test 2 ", id)
+  
+        let time = 0;
+
+        // Test vstavljanja div značk
+        let container = document.createElement('div')
+        let img = document.createElement('img')
+        img.setAttribute('src', 'noaccess.pngdsd')
+        img.setAttribute('src', 'noaccess.png')
+        img.setAttribute('src', '')
+
+        container.append(img)
+        document.body.append(container)
+
+        time = Date.now()
+        for (var i = 10000; i > 0; i--) {
+            img.setAttribute('src', 'noaccess.pngdsd')
+        };
+        times.original.push(Date.now() - time)
+
+        container.remove()
+        document.body.append(container)
+
+        // pricetek sledenja
+        var unprotect = protectElement(img)
+
+        time = Date.now()
+        for (var i = 10000; i > 0; i--) {
+            img.setAttribute('src', 'noaccess.png')
+        };
+        times.modified.push(Date.now() - time)
+
+
+        //Clean
+        setTimeout(unprotect, 200)
+        container.remove()
+
+
+      }
+
+    function test3(id) {
+        console.log("Test 3 ", id)
+  
+        let time = 0;
+
+        let testObj = {
+            test : (a) => console.log(a)
+        }
+
+        // Test vstavljanja div značk
+        time = Date.now()
+        for (var i = 10000; i > 0; i--) {
+            testObj.test('test')
+
+        };
+        times.original.push(Date.now() - time)
+
+        secureFunction(testObj, 'test', function(tip, metoda, origFunkcija, args){
+            // onemogocimo prepis funkcij
+            if(tip === 'SET') return undefined
+            //
+            var wrap = function(){
+                return origFunkcija().apply(this, arguments)
+            }
+            return wrap
+        })
+
+
+        time = Date.now()
+        for (var i = 10000; i > 0; i--) {
+            testObj.test('test2')
+        };
+        times.modified.push(Date.now() - time)
+
+      }
+
+    function test4(id) {
+        console.log("Test 4 ", id)
+  
+        let time = 0;
+
+        const wsULR = 'wss://echo.websocket.org'
+
+        // Test vstavljanja div značk
+        time = Date.now()
+        for (var i = 49999; i >= 0; i--) {
+            let socket = new WebSocket(wsULR)
+
+            if(i%10000 === 0){
+                times.original.push(Date.now() - time)
+                time = Date.now()
+            }
+        };
+        
+        secureFunction(window, 'WebSocket', urlWhitelistConstructorPolicy)
+
+
+        time = Date.now()
+        for (var i = 49999; i >=0; i--) {
+            let socket = new WebSocket(wsULR)
+
+            if(i%10000 === 0){
+                times.modified.push(Date.now() - time)
+                time = Date.now()
+            }
+        };
+
+      }
+
+    function test5(id) {
+        console.log("Test 5 ", id)
+  
+        let time = 0;
+
+        // Test iskanja elementov
+        let cont = document.getElementById('test5')
+
+        time = Date.now()
+        for (var i = 199999; i >= 0; i--) {
+            if(document.getElementById('test5hidden')){
+                // console.log("found")
+            }
+
+            if(document.getElementsByTagName('span').length>1){
+                // console.log("found span")
+            }
+
+            if(i%20000 === 0){
+                times.original.push(Date.now() - time)
+                time = Date.now()
+            }
+        };
+
+        let element = document.getElementById('test5hidden') 
+        
+        console.log(element.HIDEME)
+        hideElement(element)
+        protectDOM()
+
+        time = Date.now()
+        for (var i = 199999; i >= 0; i--) {
+            if(document.getElementById('test5hidden')){   
+                console.log("found")
+            }
+
+            // 2 spans - one hidden
+            if(document.getElementsByTagName('span').length>1){
+                console.log("found span")
+            }
+
+            if(i%20000 === 0){
+                times.modified.push(Date.now() - time)
+                time = Date.now()
+            }
+        };
+
+      }
+
+
+      function test6(id) {
+        console.log("Test 6 ", id)
+  
+        let time = 0;
+
+        // Test iskanja elementov
+        let cont = document.getElementById('test5')
+
+        time = Date.now()
+        for (var i = 199999; i >= 0; i--) {
+            cont.children.length
+
+            if(i%20000 === 0){
+                times.original.push(Date.now() - time)
+                time = Date.now()
+            }
+        };
+
+        let element = document.getElementById('test5hidden') 
+        
+        console.log(element.HIDEME)
+        hideElement(element)
+        protectDOM()
+
+        time = Date.now()
+        for (var i = 199999; i >= 0; i--) {
+            cont.children.length
+
+            if(i%20000 === 0){
+                times.modified.push(Date.now() - time)
+                time = Date.now()
+            }
+        };
+      }
+
+
+
+      /**
+            SETUP
+        
+      */
+    var times = {
+      original : [],
+      modified : []
+    }
+
+      function doTest(testFn, repeat, delay, setSize){
+        return new Promise(function(resolve, reject){
+            var chain = Promise.resolve()
+          for (var i = repeat; i > 0; i--) {
+                chain = chain.then(()=>testFn(i+1))
+          }
+
+          chain.then(finish)
+
+          setSize = setSize || repeat
+
+          function finish() {
+            let origAvg = times.original.reduce((sum, t)=> sum+t,0) / setSize
+            let modAvg = times.modified.reduce((sum, t)=> sum+t,0) / setSize
+
+            let origDev = Math.sqrt(times.original.reduce((dev, t) => dev + Math.pow(t-origAvg, 2),0)/(setSize-1))
+            let modDev = Math.sqrt(times.modified.reduce((dev, t) => dev + Math.pow(t-modAvg, 2),0)/(setSize-1))
+
+            console.log(testFn, times, origAvg, origDev, modAvg, modDev)
+
+            times = {
+              original : [],
+              modified : []
+            }
+
+            resolve()
+
+          }
+        })
+      }
+
+      /** TEST */
+
+    var tests = function() {
+        Promise.resolve()
+        .then(()=>doTest(test1, 10, 4000))
+        .then(()=>new Promise((resolve) => setTimeout(resolve, 1000)))
+        .then(()=>doTest(test2, 10, 1000))
+        .then(()=>new Promise((resolve) => setTimeout(resolve, 2000)))
+        .then(()=>doTest(test3, 10, 5000))
+        .then(()=>new Promise((resolve) => setTimeout(resolve, 1000)))
+        .then(()=>doTest(test4, 1, 10000, 5))
+        .then(()=>new Promise((resolve) => setTimeout(resolve, 1000)))
+        .then(()=>doTest(test5, 1, 10000,5))
+    }
+
+    function doTest6() {
+        doTest(test6, 1, 10000, 5)
+    }
+
+
+/***
+
+// Primer restriktivne politike
+secureFunction(window, 'alert', function(tip, metoda, cb){ 
+    return cb()
+})
+secureFunction(window, 'confirm', readOnlyPolicy)
+
+secureFunction(XMLHttpRequest.prototype, 'open', urlWhitelistXMLHttpPolicy)
+
+secureFunction(window, 'open', urlWhitelistPolicy)
+
+secureFunction(window, 'WebSocket', urlWhitelistConstructorPolicy)
+secureFunction(window, 'EventSource', urlWhitelistConstructorPolicy)
+secureFunction(window, 'RTCPeerConnection', urlWhitelistConstructorPolicy)
+
+secureFunction(Document.prototype, 'cookie', writeOnlyPolicy)
+secureFunction(HTMLDocument.prototype, 'cookie', writeOnlyPolicy)
+
+
+*/
+       
+    </script>
+
+
+
+    <div id="test5">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <span class='____HIDEME____' id='test5hidden'></span>
+        <span></span>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+    </div>
+</body>
+</html>
