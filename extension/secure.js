@@ -452,8 +452,6 @@ var protectElement = (function () {
 
 
     var integrityFunction = function (mutations) {
-        console.log("Detected changes");
-
         mutations.forEach(function (mutation) {
 
             let target = mutation.target
@@ -497,7 +495,7 @@ var protectElement = (function () {
     }
 
 
-    var defaultOptions = {
+    var options = {
         attributes: true,
         characterData: true,
         attributeOldValue: true,
@@ -521,16 +519,13 @@ var protectElement = (function () {
         }
     }
 
-    // var elements = document.getElementsByClassName(NOCHANGES_CLASS)
-    // if (elements) {
-    //     Array.from(elements).forEach(el => elementIntegrity(el, options))
-    // }
+    var elements = document.getElementsByClassName(NOCHANGES_CLASS)
+    if (elements) {
+        Array.from(elements).forEach(el => elementIntegrity(el, options))
+    }
 
-    return function (element, options) {
-        var o = options || defaultOptions;
-        console.log(o);
-
-        return elementIntegrity(element, o)
+    return function (element) {
+        return elementIntegrity(element, options)
     }
 
 }())
